@@ -218,7 +218,22 @@ void JointTrajectoryControllerBase::updateStep(const ros::Time& time,
   }
 
   // Update the state of the Skeleton.
+  auto previousPosition = mControlledSkeleton->getPositions();
   mSkeletonUpdater->update();
+  auto currentPosition = mControlledSkeleton->getPositions();
+
+  double eps = 1e-3;
+  for (size_t idof=0; idof < mAdapters.size(); ++idof)
+  {
+    auto diff = abs(previousPosition[idof] - currentPosition[idof]) ;
+    if ( diff > eps)
+    {
+      std::stringstream msg;
+      msg << idof << " dof changed by " <<  diff;
+      throw std::runtime_error(msg.str());
+    }
+  }
+
   mActualPosition = mControlledSkeleton->getPositions();
   mActualVelocity = mControlledSkeleton->getVelocities();
   mActualEffort = mControlledSkeleton->getForces();
